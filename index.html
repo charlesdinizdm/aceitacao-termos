@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Page - Termos de Serviço</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background: linear-gradient(135deg, #004080, #004f99); /* Azul mais escuro */
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+    }
+
+    /* Animação de Fade-in */
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      transform: translateY(20px);
+      animation: slideUp 1.5s forwards ease-in-out;
+    }
+
+    /* Animação de Slide-up */
+    @keyframes slideUp {
+      to { transform: translateY(0); }
+    }
+
+    h1 {
+      color: #333;
+      animation: fadeIn 1.5s ease-in-out;
+    }
+
+    p {
+      color: #666;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input[type="text"], input[type="email"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-family: 'Arial', sans-serif;  /* Fonte mais legível */
+      font-size: 16px;
+      resize: vertical;
+      box-sizing: border-box;
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    input[type="text"]:focus, input[type="email"]:focus {
+      border-color: #005bb5;
+      box-shadow: 0 0 5px rgba(0, 91, 181, 0.5);
+      outline: none;
+    }
+
+    .terms {
+      font-size: 12px;
+      color: #333;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .terms a {
+      color: #0066cc;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .terms a:hover {
+      color: #005bb5;
+    }
+
+    .button {
+      background-color: #0066cc;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: #005bb5;
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Modal de Termos de Serviço */
+    #termsModal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #termsModalContent {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 700px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+
+    #closeModal {
+      color: #333;
+      float: right;
+      cursor: pointer;
+    }
+
+    /* Estilos para o carregamento de conteúdo */
+    #termsLoading {
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* Rodapé */
+    .footer {
+      margin-top: 20px;
+      color: white;
+      font-size: 14px;
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Contato</h1>
+    <form id="contactForm">
+      <label for="name">Nome:</label>
+      <input type="text" id="name" placeholder="Digite seu nome" required>
+      
+      <label for="email">Email:</label>
+      <input type="email" id="email" placeholder="Digite seu email" required>
+
+      <!-- Campo oculto para versão dos termos -->
+      <input type="hidden" id="termsVersion" value="1.0">
+      
+      <!-- Campo oculto para data e hora do aceite -->
+      <input type="hidden" id="acceptanceDateTime">
+
+      <!-- Campo oculto para ID de usuário (UUID) -->
+      <input type="hidden" id="userId">
+
+      <div class="terms">
+        <p>Ao clicar em "Aceitar", você concorda com os nossos <a id="openTerms">Termos de Serviço</a> (Versão 1.0).</p>
+        <label><input type="checkbox" id="acceptTerms"> Eu aceito os termos e condições</label>
+      </div>
+
+      <button type="submit" class="button" id="submitBtn" disabled>Enviar</button>
+    </form>
+  </div>
+
+  <!-- Modal para exibir os Termos de Serviço -->
+  <div id="termsModal">
+    <div id="termsModalContent">
+      <span id="closeModal">&times;</span>
+      <h2>Termos de Serviço - Versão 1.0</h2>
+      <div id="termsLoading">Carregando termos...</div>
+      <div id="termsContent"></div>
+    </div>
+  </div>
+
+  <!-- Rodapé -->
+  <div class="footer">
+    © DM Vídeo Produções - Todos os direitos reservados
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    // Habilitar botão após aceitar termos
+    const checkbox = document.getElementById('acceptTerms');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('contactForm');
+    const termsVersion = document.getElementById('termsVersion').value; // Capturar versão dos termos
+
+    checkbox.addEventListener('change', () => {
+      submitBtn.disabled = !checkbox.checked;
+    });
+
+    // Modal de Termos de Serviço
+    const termsModal = document.getElementById('termsModal');
+    const openTerms = document.getElementById('openTerms');
+    const closeModal = document.getElementById('closeModal');
+    const termsContent = document.getElementById('termsContent');
+    const termsLoading = document.getElementById('termsLoading');
+
+    openTerms.onclick = function() {
+      termsModal.style.display = "flex";
+      loadTermsFromGoogleDoc();  // Carregar os termos dinamicamente do Google Docs
+    }
+
+    closeModal.onclick = function() {
+      termsModal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == termsModal) {
+        termsModal.style.display = "none";
+      }
+    }
+
+    // Função para carregar termos de serviço via Google Apps Script
+    function loadTermsFromGoogleDoc() {
+      termsContent.innerHTML = '';  // Limpar o conteúdo existente
+      termsLoading.style.display = 'block';  // Mostrar "Carregando..."
+
+      // URL do seu Google Apps Script que retorna os termos
+      const scriptUrl = "https://script.google.com/macros/s/1W3HhF7jTmYBEVq2p8ouxEN0tD7Hd9OoLAKF07IrSCHtcU_-oSseTpROB/exec";
+
+      $.ajax({
+        url: scriptUrl,  // Use o URL do Google Apps Script implantado
+        method: "GET",
+        success: function(response) {
+          termsContent.innerHTML = response.terms;  // Exibir termos carregados
+          termsLoading.style.display = 'none';  // Esconder "Carregando..."
+        },
+        error: function(err) {
+          termsContent.innerHTML = 'Erro ao carregar os termos. Tente novamente mais tarde.';
+          termsLoading.style.display = 'none';  // Esconder "Carregando..."
+        }
+      });
+    }
+
+    // Função para capturar geolocalização
+    function getGeolocation(callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          callback(position.coords.latitude, position.coords.longitude);
+        }, function() {
+          callback(null, null);
+        });
+      } else {
+        callback(null, null);
+      }
+    }
+
+    // Função para capturar o tipo de dispositivo
+    function getDeviceType() {
+      const userAgent = navigator.userAgent;
+      if (/android|iphone|ipad|ipod/i.test(userAgent)) {
+        return 'Mobile';
+      } else if (/tablet/i.test(userAgent)) {
+        return 'Tablet';
+      } else {
+        return 'Desktop';
+      }
+    }
+
+    // Função para gerar ID de usuário (UUID)
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Captura de dados e envio para Google Sheets
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      // Gerar ID de usuário (UUID) para o cliente
+      const userId = generateUUID();
+      document.getElementById('userId').value = userId;
+
+      // Capturar data e hora do aceite
+      const dateTimeNow = new Date().toLocaleString();
+      document.getElementById('acceptanceDateTime').value = dateTimeNow;
+
+      // Capturar IP do usuário (requer um serviço de terceiros ou backend)
+      let userIP = 'Desconhecido'; // Placeholder
+
+      // Obter geolocalização e enviar ao Google Sheets
+      getGeolocation(function(latitude, longitude) {
+        const deviceType = getDeviceType();
+
+        // Enviar dados para Google Sheets usando Google Apps Script
+        $.ajax({
+          url: "https://script.google.com/macros/s/AKfycbzgppPrPbcTeV7u6Bas__fvsP68AYMlIsD9_vu3A8DPqTuIPp2NEFwwGefeIVY4iJBAHw/exec",  // Atualize com o ID do seu Google Script
+          method: "POST",
+          data: {
+            userId: userId,  // Enviar ID de usuário (UUID)
+            name: name,
+            email: email,
+            termsAccepted: checkbox.checked,
+            termsVersion: termsVersion,  // Enviar versão dos termos
+            acceptanceDateTime: dateTimeNow,  // Enviar data e hora do aceite
+            latitude: latitude,
+            longitude: longitude,
+            deviceType: deviceType,
+            ip: userIP
+          },
+          success: function(response) {
+            // Exibir mensagem de sucesso
+            alert('Dados enviados com sucesso!');
+          },
+          error: function(err) {
+            console.error('Erro no envio', err);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
